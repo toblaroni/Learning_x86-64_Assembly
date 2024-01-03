@@ -83,4 +83,56 @@ Take `%eax` for instance. If you wanted to work with two bytes at a time you cou
 `%ax` is further divided up into `%al` and `%ah`. `%al` being the least significant byte of `%ax`.
 
 
+## Chapter 4. Functions 
+Functions are comprised of several different pieces:
 
+#### Function Name
+Address where the function's code starts.
+
+#### Function Parameters
+Some functions have no parameters.
+
+#### Local Variables
+Variables used by the function and then thrown away when the function returns.
+
+#### Static Variables
+Variables used by the function but not thrown away after the function returns. They're used everytime the function is called. Not accessible by any other part of the program. Generally not used unless absolutely necessary.
+
+#### Global Variables
+Data storage that the function uses that is managed outside the function.
+
+#### Return Address
+"Invisible" parameter that isn't directly used inside the function. Tells the function where to return to after execution is finished. This param is passed automatically by the **call** instruction. The **ret** instruction handles returning to that address. 
+
+### Computer Stack
+Computer stack *lives at the top addresses of memory*.
+
+You can push values to the top of the stack using **pushl**, which pushes either a *register* or *memory value* onto the top of the stack. The "top" of the stack is actually the bottom of the stack's memory. The stack starts at the top of memory and grows downwards due to architectural considerations. 
+
+You can also pop values off the top using **popl**. This pops the value from the top of the stack and places it into a register or memory address of your choosing.
+
+The stack register **%esp** always contains a pointer to the current top of the stack. Whenever we push something onto the stack **%esp** gets subtracted by 4.
+
+If we simply want to access the value on the top of the stack without removing it we can use indirect addressing mode. We can use `movl (%esp), %eax` to move whatever is in the top of the stack into **%eax**. 
+If we just did `movl %esp, %eax` then **%eax** would just hold the pointer to the top of the stack rather than the value at the top.
+
+Putting **%esp** in parenthesis causes the computer to go into indirect addressing mode. If we wanted the value just below the top value, we can simply use `movl 4(%esp), %eax`.
+
+In the C language calling convention, before function execution, a program:
+1. pushes all of the parameters of the function onto the stack in reverse order that they're documented. 
+2. Then the function issues a **call** instruction indicating which function it wishes to start. The call instruction does 2 things:
+    1. First it pushes the address of the next instruction, which is the return address, onto the stack. 
+    2. Then it modifies the instruction pointer (%eip) to point to the start of the function
+
+So the stack looks something like this:
+
+**Parameter #N**
+**...**
+**Parameter 2**
+**Parameter 1**
+**Return Address <-- (%esp)** 
+
+Now that the return address is on the stack, the function has some work to do.
+
+The first thing it does is save the current base pointer register with `pushl %ebp`. The base pointer register is a special register for accessing function parameters and local variables.
+Next it copies the stack pointer to the base pointer with `movl %esp, %ebp`. 
